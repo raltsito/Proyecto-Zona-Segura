@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Zonas Seguras</h2>
+<div class="row">
+    {% for zone in zones %}
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ zone.name }}</h5>
+                <p class="card-text">{{ zone.description }}</p>
+                <small>Coordenadas: {{ zone.latitude }}, {{ zone.longitude }}</small>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
