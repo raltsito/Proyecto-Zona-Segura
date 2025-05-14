@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>📍 Agregar Comentario Sobre Zona</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">Nombre (Zona)</label>
+        <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <textarea name="description" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Latitud</label>
+            <input type="number" step="any" name="latitude" id="latitude" class="form-control" required readonly>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Longitud</label>
+            <input type="number" step="any" name="longitude" id="longitude" class="form-control" required readonly>
+        </div>
+    </div>
+    <button type="button" onclick="getLocation()" class="btn btn-info mb-3">Obtener mi ubicación</button>
+    <button type="submit" class="btn btn-success">Guardar Zona</button>
+</form>
+
+<script>
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                document.getElementById('latitude').value = position.coords.latitude;
+                document.getElementById('longitude').value = position.coords.longitude;
+                alert("Ubicación obtenida correctamente");
+            },
+            function(error) {
+                alert("Error al obtener la ubicación: " + error.message);
+            }
+        );
+    } else {
+        alert("Tu navegador no soporta geolocalización");
+    }
+}
+</script>
+{% endblock %}

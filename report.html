@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">🚨 Reportar Zona Peligrosa</h2>
+    
+    <!-- Formulario -->
+    <div class="card shadow mb-5">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('report_incident') }}">
+                <div class="mb-3">
+                    <label class="form-label">Tipo de Incidente*</label>
+                    <select name="type" class="form-select" required>
+                        <option value="">Selecciona...</option>
+                        <option value="robo">👜 Robo</option>
+                        <option value="acoso">🚨 Acoso</option>
+                        <option value="accidente">🚗 Accidente</option>
+                        <option value="obstaculo">⚠️ Obstáculo en vía</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Dirección Exacta*</label>
+                    <input type="text" name="address" class="form-control" 
+                           placeholder="Ej: Carrera 15 # 32-10, Ciudad" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción (Opcional)</label>
+                    <textarea name="description" class="form-control" rows="2" 
+                              placeholder="¿Qué ocurrió?"></textarea>
+                </div>
+                <button type="submit" class="btn btn-danger">
+                    📢 Reportar Incidente
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Reportes -->
+    <h3 class="mb-3">📋 Historial de Reportes</h3>
+    {% if not incidents %}
+        <div class="alert alert-info">No hay reportes registrados aún.</div>
+    {% else %}
+        <div class="list-group">
+            {% for incident in incidents %}
+            <div class="list-group-item {% if incident.type == 'robo' %}list-group-item-danger{% elif incident.type == 'acoso' %}list-group-item-warning{% else %}list-group-item-info{% endif %}">
+                <div class="d-flex justify-content-between">
+                    <h5>
+                        {% if incident.type == 'robo' %}👜
+                        {% elif incident.type == 'acoso' %}🚨
+                        {% elif incident.type == 'accidente' %}🚗
+                        {% else %}⚠️{% endif %}
+                        {{ incident.type|title }}
+                    </h5>
+                    <small class="text-muted">{{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                </div>
+                <p class="mb-1">{{ incident.description or "Sin detalles adicionales" }}</p>
+                <small class="text-muted">📍 {{ incident.address }}</small>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

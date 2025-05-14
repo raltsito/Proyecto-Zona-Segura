@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}Rutas Seguras{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-4 mb-4">
+      <div class="card shadow">
+        <div class="card-body">
+          <h5 class="card-title">Configurar Ruta</h5>
+          <form id="routeForm">
+            <div class="mb-3">
+              <label class="form-label">Origen</label>
+              <div class="input-group">
+                <button class="btn btn-outline-primary" type="button" id="getLocation">
+                  <i class="bi bi-geo-alt"></i> Mi ubicación
+                </button>
+                <input type="text" class="form-control" id="startPoint" placeholder="Coordenadas" readonly>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Destino</label>
+              <input type="text" class="form-control" id="endPoint" placeholder="Ingresa tu destino" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="calculateBtn" disabled>
+              <i class="bi bi-signpost-split"></i> Calcular Ruta
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8">
+      <div id="map" style="height: 500px; border-radius: 10px; background-color: #eee;"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ORS_API_KEY = '5b3ce3597851110001cf6248491af9c730e74f599a3190748672deb8';
+
+document.addEventListener('DOMContentLoaded', function() {
+    let map;
+    let routeLayer;
+
+    function initMap(lat, lng) {
+        if (!document.getElementById('map')) {
+            console.error('El elemento #map no existe');
+            return;
+        }
+
+        map = L.map('map').setView([lat, lng], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        L.Control.geocoder({
+            defaultMarkGeocode: false,
+            geocoder: L.Control.Geocoder.nominatim(),
+            placeholder: 'Buscar dirección...',
+            errorMessage: 'Dirección no encontrada'
+        }).on('markgeocode', function(e) {
+            document.getElementById('endPoint').value = e.geocode.name;
+        }).addTo(map);
+    }
+
+    document.getElementById('getLocation').addEventListener('click', function() {
+        if (!navigator.geolocation) {
+            alert('La geolocalización no está soportada en tu navegador');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                document.getElementById('startPoint').value = `${lat},${lng}`;
+                document.getElementById('calculateBtn').disabled = false;
+
+                if (!map) {
+                    initMap(lat, lng);
+                } else {
+                    map.setView([lat, lng], 13);
+                    L.marker([lat, lng]).addTo(map)
+                        .bindPopup('Tu ubicación actual')
+                        .openPopup();
+                }
+            },
+            function(error) {
+                alert('Error al obtener la ubicación: ' + error.message);
+                console.error('Error de geolocalización:', error);
+            }
+        );
+    });
+
+    const routeForm = document.getElementById('routeForm');
+    if (routeForm) {
+        routeForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const start = document.getElementById('startPoint').value;
+            const end = document.getElementById('endPoint').value;
+
+            if (!start || !end) {
+                alert('Por favor completa origen y destino');
+                return;
+            }
+
+            try {
+                const geoResponse = await fetch(
+                    `https://api.openrouteservice.org/geocode/search?api_key=${ORS_API_KEY}&text=${encodeURIComponent(end)}`
+                );
+
+                if (!geoResponse.ok) {
+                    throw new Error(`Error en geocodificación: ${geoResponse.status}`);
+                }
+
+                const geoData = await geoResponse.json();
+
+                if (!geoData.features || geoData.features.length === 0) {
+                    throw new Error('No se encontró el destino');
+                }
+
+                const destCoords = geoData.features[0].geometry.coordinates; // [lon, lat]
+                const startCoords = start.split(',').map(Number);
+
+                const routeResponse = await fetch('/get_safe_route', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        start_lat: startCoords[0],
+                        start_lon: startCoords[1],
+                        end_lat: destCoords[1],
+                        end_lon: destCoords[0]
+                    })
+                });
+
+                if (!routeResponse.ok) {
+                    const errorData = await routeResponse.json();
+                    throw new Error(errorData.error || 'Error al calcular la ruta');
+                }
+
+                const routeData = await routeResponse.json();
+
+                if (routeLayer) {
+                    map.removeLayer(routeLayer);
+                }
+
+                routeLayer = L.layerGroup();
+                let allBounds = [];
+
+                if (!routeData.route || !Array.isArray(routeData.route.routes)) {
+                    throw new Error("Formato de ruta no válido");
+                }
+
+                routeData.route.routes.forEach((r, index) => {
+                    const color = ['#3388ff', '#33cc33', '#ff9933'][index % 3];
+
+                    const segment = L.geoJSON({
+                        type: 'Feature',
+                        geometry: r.geometry
+                    }, {
+                        style: {
+                            color: color,
+                            weight: 5,
+                            opacity: 0.7
+                        }
+                    });
+
+                    segment.addTo(routeLayer);
+
+                    try {
+                        allBounds.push(segment.getBounds());
+                    } catch (err) {
+                        console.warn("No se pudieron obtener los límites:", err);
+                    }
+                });
+
+                routeData.safe_zones.forEach(zone => {
+                    L.marker([zone.lat, zone.lon])
+                      .addTo(routeLayer)
+                      .bindPopup(`<strong>${zone.name}</strong>`);
+                });
+
+                routeLayer.addTo(map);
+
+                if (allBounds.length > 0) {
+                    const combinedBounds = allBounds.reduce((acc, b) => acc.extend(b), allBounds[0]);
+                    map.fitBounds(combinedBounds);
+                }
+
+            } catch (error) {
+                console.error('Error en la solicitud:', error);
+                alert('Error al calcular la ruta: ' + error.message);
+            }
+        });
+    } else {
+        console.error('Formulario no encontrado');
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Registro de Usuario</h2>
+                
+                <form method="POST" action="{{ url_for('register') }}">
+                    <!-- Usuario -->
+                    <div class="mb-3">
+                        <label for="username" class="form-label">
+                            <i class="bi bi-person-fill"></i> Nombre de Usuario
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="username"
+                            name="username" 
+                            required
+                            minlength="4"
+                            maxlength="20"
+                            pattern="[A-Za-z0-9]+"
+                            title="Solo letras y números (sin espacios)"
+                        >
+                        <div class="form-text">Mínimo 4 caracteres</div>
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">
+                            <i class="bi bi-lock-fill"></i> Contraseña
+                        </label>
+                        <input 
+                            type="password" 
+                            class="form-control" 
+                            id="password"
+                            name="password" 
+                            required
+                            minlength="6"
+                            pattern="^(?=.*[A-Za-z])(?=.*\d).+"
+                            title="Al menos una letra y un número"
+                        >
+                        <div class="form-text">Mínimo 6 caracteres con letras y números</div>
+                    </div>
+
+                    <!-- Confirmar  la contraseña -->
+                    <div class="mb-4">
+                        <label for="confirm_password" class="form-label">
+                            <i class="bi bi-lock-fill"></i> Confirmar Contraseña
+                        </label>
+                        <input 
+                            type="password" 
+                            class="form-control" 
+                            id="confirm_password"
+                            name="confirm_password" 
+                            required
+                            minlength="6"
+                        >
+                    </div>
+
+                    <!-- Boton de registro -->Botón de Registro
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus-fill"></i> Registrarse
+                        </button>
+                    </div>
+
+                    <!-- Enlace al login -->
+                    <div class="text-center mt-3">
+                        <small>
+                            ¿Ya tienes cuenta? 
+                            <a href="{{ url_for('login') }}" class="text-decoration-none">
+                                Inicia Sesión aquí
+                            </a>
+                        </small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .card {
+        margin-top: 2rem;
+        border-radius: 15px;
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .bi {
+        margin-right: 8px;
+    }
+</style>
+{% endblock %}
