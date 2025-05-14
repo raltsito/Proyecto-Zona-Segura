@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Agregar Comentario Sobre Zona</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">Nombre (Zona)</label>
+        <input type="text" name="name" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <textarea name="description" class="form-control" rows="3"></textarea>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Latitud</label>
+            <input type="number" step="any" name="latitude" class="form-control" required>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Longitud</label>
+            <input type="number" step="any" name="longitude" class="form-control" required>
+        </div>
+    </div>
+    <button type="submit" class="btn btn-success">Guardar Zona</button>
+</form>
+{% endblock %}
